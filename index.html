@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Spelling App</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6f8;
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  background: #4a90e2;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 20px;
+}
+
+.container {
+  padding: 15px;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.btn-blue { background: #4a90e2; color: white; }
+.btn-green { background: #27ae60; color: white; }
+.btn-red { background: #e74c3c; color: white; }
+
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+#testArea {
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">📚 Spelling Learning App</div>
+
+<div class="container">
+
+<!-- 編輯區 -->
+<div class="card" id="editArea">
+  <h3>📂 單字簿</h3>
+
+  <input id="bookName" placeholder="單字簿名稱">
+
+  <textarea id="wordList" rows="6" placeholder="每行一個單字"></textarea>
+
+  <button class="btn-blue" onclick="saveBook()">儲存單字簿</button>
+  <button class="btn-red" onclick="loadBook()">載入單字簿</button>
+</div>
+
+<!-- 測驗區 -->
+<div class="card" id="testArea">
+  <h3>🧠 測驗模式</h3>
+
+  <p id="progress"></p>
+
+  <button class="btn-green" onclick="playWord()">🔊 聽單字</button>
+
+  <input id="answer" placeholder="輸入你聽到的單字">
+
+  <button class="btn-blue" onclick="checkAnswer()">提交</button>
+
+  <p id="result"></p>
+</div>
+
+<button class="btn-green" onclick="startTest()">開始測驗</button>
+
+</div>
+
+<script>
+
+let words = [];
+let wrongWords = [];
+let currentIndex = 0;
+let currentWord = "";
+let isReview = false;
+
+function saveBook() {
+  localStorage.setItem(
+    document.getElementById("bookName").value,
+    document.getElementById("wordList").value
+  );
+  alert("已儲存");
+}
+
+function loadBook() {
+  let name = document.getElementById("bookName").value;
+  document.getElementById("wordList").value = localStorage.getItem(name);
+}
+
+function startTest() {
+  words = document.getElementById("wordList").value
+    .split("\n").map(w => w.trim()).filter(w => w);
+
+  wrongWords = [];
+  currentIndex = 0;
+  isReview = false;
+
+  document.getElementById("editArea").style.display = "none";
+  document.getElementById("testArea").style.display = "block";
+
+  next();
+}
+
+function next() {
+  if (currentIndex >= words.length) {
+
+    if (wrongWords.length > 0 && !isReview) {
+      words = wrongWords;
+      wrongWords = [];
+      currentIndex = 0;
+      isReview = true;
+      next();
+      return;
+    }
+
+    document.getElementById("result").innerText = "🎉 完成";
+    return;
+  }
+
+  currentWord = words[currentIndex];
+  document.getElementById("answer").value = "";
+  document.getElementById("progress").innerText =
+    `第 ${currentIndex + 1} / ${words.length}`;
+}
+
+function playWord() {
+  let s = new SpeechSynthesisUtterance(currentWord);
+  s.lang = "en-US";
+  speechSynthesis.speak(s);
+}
+
+function checkAnswer() {
+  let a = document.getElementById("answer").value.trim();
+
+  if (a.toLowerCase() === currentWord.toLowerCase()) {
+    document.getElementById("result").innerText = "✅ 正確";
+  } else {
+    document.getElementById("result").innerText = "❌ 答案：" + currentWord;
+    wrongWords.push(currentWord);
+  }
+
+  currentIndex++;
+  setTimeout(next, 1000);
+}
+
+</script>
+
+</body>
+</html>
