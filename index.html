@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Spelling App</title>
+</head>
+<body>
+
+<h2>📚 Spelling App</h2>
+
+<h3>📂 單字簿</h3>
+<select id="bookSelect" onchange="loadSelectedBook()"></select><br><br>
+
+<input id="bookName" placeholder="新增單字簿名稱"><br><br>
+
+<textarea id="wordList" rows="6" cols="40" placeholder="每行一個單字"></textarea><br><br>
+
+<button onclick="saveBook()">💾 儲存</button>
+<button onclick="deleteBook()">🗑 刪除</button>
+<button onclick="startTest()">開始測驗</button>
+
+<hr>
+
+<div id="testArea" style="display:none;">
+  <p id="progress"></p>
+
+  <button onclick="playWord()">🔊 聽單字</button><br><br>
+
+  <input type="text" id="answer">
+  <button onclick="checkAnswer()">提交</button>
+
+  <p id="result"></p>
+</div>
+
+<script>
+let words = [];
+let wrongWords = [];
+let currentIndex = 0;
+let currentWord = "";
+let isReviewMode = false;
+
+function updateBookList() {
+  let select = document.getElementById("bookSelect");
+  select.innerHTML = "";
+
+  for (let i = 0; i < localStorage.length; i++) {
+    let key = localStorage.key(i);
+    let option = document.createElement("option");
+    option.value = key;
+    option.text = key;
+    select.appendChild(option);
+  }
+}
+
+function saveBook() {
+  let name = document.getElementById("bookName").value;
+  let words = document.getElementById("wordList").value;
+
+  if (!name || !words) {
+    alert("請輸入名稱與單字！");
+    return;
+  }
+
+  localStorage.setItem(name, words);
+  updateBookList();
+}
+
+function loadSelectedBook() {
+  let name = document.getElementById("bookSelect").value;
+  let words = localStorage.getItem(name);
+  document.getElementById("wordList").value = words;
+  document.getElementById("bookName").value = name;
+}
+
+function deleteBook() {
+  let name = document.getElementById("bookName").value;
+  localStorage.removeItem(name);
+  updateBookList();
+  document.getElementById("wordList").value = "";
+}
+
+function startTest() {
+  let input = document.getElementById("wordList").value;
+
+  words = input.split("\n").map(w => w.trim()).filter(w => w);
+  wrongWords = [];
+  currentIndex = 0;
+  isReviewMode = false;
+
+  if (words.length === 0) {
+    alert("請輸入單字！");
+    return;
+  }
+
+  document.getElementById("testArea").style.display = "block";
+  nextWord();
+}
+
+function nextWord() {
+  if (currentIndex >= words.length) {
+    if (wrongWords.length > 0 && !isReviewMode) {
+      alert("錯題再練一次！");
+      words = wrongWords;
+      wrongWords = [];
+      currentIndex = 0;
+      isReviewMode = true;
+      nextWord();
+      return;
+    }
+
+    document.getElementById("result").innerText = "🎉 完成！";
+    return;
+  }
+
+  currentWord = words[currentIndex];
+  document.getElementById("answer").value = "";
+  document.getElementById("result").innerText = "";
+  document.getElementById("progress").innerText =
+    `第 ${currentIndex + 1} / ${words.length} 題`;
+}
+
+function playWord() {
+  let speech = new SpeechSynthesisUtterance(currentWord);
+  speech.lang = "en-US";
+  speech.rate = 0.8;
+  speechSynthesis.speak(speech);
+}
+
+function checkAnswer() {
+  let input = document.getElementById("answer").value.trim();
+
+  if (input.toLowerCase() === currentWord.toLowerCase()) {
+    document.getElementById("result").innerText = "✅ 正確！";
+  } else {
+    document.getElementById("result").innerText =
+      "❌ 錯誤！答案：" + currentWord;
+
+    wrongWords.push(currentWord);
+  }
+
+  currentIndex++;
+  setTimeout(nextWord, 1200);
+}
+
+updateBookList();
+</script>
+
+</body>
+</html>
